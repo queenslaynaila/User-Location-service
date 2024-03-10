@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import 'express-async-errors';
 import morgan from 'morgan';
 import cors from 'cors';
-import dotenv from 'dotenv'
+import dotenv from 'dotenv';
 import { HttpError } from './middleware/errorMiddleware';
 import { WebServiceClient } from '@maxmind/geoip2-node';
 
@@ -16,29 +16,56 @@ dotenv.config();
 const acount = process.env.ACCOUNT_SID ?? 'default_value';
 const apiKey = process.env.API_KEY ?? 'default_value';
 
-const client = new WebServiceClient(acount,apiKey,{ host: 'geolite.info'}
-)
+const client = new WebServiceClient(acount, apiKey, { host: 'geolite.info' });
 
-app.get('/user-location', async (_req: Request, res: Response) => {
-  const ipAddress = '66.15.224.255';
-  const response = await client.city(ipAddress);
-  const locationData = {
-    ip: response.traits?.ipAddress,
-    continentCode: response.continent?.code,
-    continentName: response.continent?.names.en,
-    countryCode: response.country?.isoCode,
-    countryName: response.country?.names.en,
-    mobileCountryCode: response.traits?.mobileCountryCode || null,
-    isInEu: response.registeredCountry?.isInEuropeanUnion,
-    city: response.city?.names.en || null,
-    latitude: response.location?.latitude,
-    longitude: response.location?.longitude,
-    postalCode: response.postal?.code || null,
-    timezone: response.location?.timeZone,
-    populationDensity: response.location?.populationDensity ||null
-  };
-  res.json(locationData);
-});
+interface LocationData {
+  ip?: string ;
+  continentCode: string | null;
+  continentName: string | null;
+  countryCode: string  | null;
+  countryName: string  | null;
+  mobileCountryCode: string | null;
+  isInEu: boolean | null;
+  city: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  postalCode?: string ;
+  timezone?: string ;
+  populationDensity?: number;
+}
+
+app.get<
+string, 
+Record<string, never>, 
+LocationData, 
+Record<string, never>, 
+Record<string, never>>(
+  '/user-location',
+  async (req, res) => {
+    const ipAddress = req.ip!;
+    const response = await client.city(ipAddress);
+    if (!response) {
+      throw new HttpError(500, 'Failed to retrieve location data');
+    }
+    const locationData = {
+      ip: response.traits?.ipAddress,
+      continentCode: response.continent?.code ?? null,
+      continentName: response.continent?.names.en ?? null,
+      countryCode: response.country?.isoCode ?? null,
+      countryName: response.country?.names.en ?? null,
+      mobileCountryCode: response.traits?.mobileCountryCode ?? null,
+      isInEu: response.registeredCountry?.isInEuropeanUnion ?? null,
+      city: response.city?.names.en ?? null,
+      latitude: response.location?.latitude ?? null,
+      longitude: response.location?.longitude ?? null,
+      postalCode: response.postal?.code ,
+      timezone: response.location?.timeZone ,
+      populationDensity: response.location?.populationDensity ,
+    };
+    
+    res.json(locationData);
+  }
+);
 
 app.use(() => {
   throw new HttpError(404, 'Route Not found');
@@ -46,11 +73,12 @@ app.use(() => {
 
 // Global error handler
 /* eslint-disable @typescript-eslint/no-unused-vars */
-app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
-  console.log(error);
+app.use((error: Error, req: Request, res: Response, _next: NextFunction) => {
+  console.error(error);
   if (error instanceof HttpError) {
     return res.status(error.statusCode).json({ error: error.message });
   }
   return res.status(500).json({ error: 'Internal Server Error' });
 });
+
 export default app;
