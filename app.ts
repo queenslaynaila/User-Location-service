@@ -15,7 +15,6 @@ dotenv.config();
 
 const acount = process.env.ACCOUNT_SID ?? 'default_value';
 const apiKey = process.env.API_KEY ?? 'default_value';
-
 const client = new WebServiceClient(acount, apiKey, { host: 'geolite.info' });
 
 interface LocationData {
@@ -29,20 +28,15 @@ interface LocationData {
   city: string | null;
   latitude: number | null;
   longitude: number | null;
-  postalCode?: string ;
-  timezone?: string ;
-  populationDensity?: number;
+  postalCode: string |null;
+  timezone: string |null;
+  populationDensity: number |null;
 }
 
-app.get<
-string, 
-Record<string, never>, 
-LocationData, 
-Record<string, never>, 
-Record<string, never>>(
+app.get<string, Record<string, never>, LocationData, Record<string, never>, Record<string, never>>(
   '/user-location',
   async (req, res) => {
-    const ipAddress = req.ip!;
+    const ipAddress = req.ip!
     const response = await client.city(ipAddress);
     if (!response) {
       throw new HttpError(500, 'Failed to retrieve location data');
@@ -55,14 +49,13 @@ Record<string, never>>(
       countryName: response.country?.names.en ?? null,
       mobileCountryCode: response.traits?.mobileCountryCode ?? null,
       isInEu: response.registeredCountry?.isInEuropeanUnion ?? null,
-      city: response.city?.names.en ?? null,
+      city: response.city?.names.en?? null,
       latitude: response.location?.latitude ?? null,
       longitude: response.location?.longitude ?? null,
-      postalCode: response.postal?.code ,
-      timezone: response.location?.timeZone ,
-      populationDensity: response.location?.populationDensity ,
+      postalCode: response.postal?.code ?? null,
+      timezone: response.location?.timeZone ?? null ,
+      populationDensity: response.location?.populationDensity ?? null ,
     };
-    
     res.json(locationData);
   }
 );
@@ -73,12 +66,13 @@ app.use(() => {
 
 // Global error handler
 /* eslint-disable @typescript-eslint/no-unused-vars */
-app.use((error: Error, req: Request, res: Response, _next: NextFunction) => {
-  console.error(error);
+app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
+  console.log(error);
   if (error instanceof HttpError) {
     return res.status(error.statusCode).json({ error: error.message });
-  }
+  } 
   return res.status(500).json({ error: 'Internal Server Error' });
+  
 });
 
 export default app;
