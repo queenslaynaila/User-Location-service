@@ -25,12 +25,12 @@ const client = new WebServiceClient(acount, apiKey, { host: 'geolite.info' });
 app.get(
   '/user-location', 
   async (req, res) => {
-    const forwardedIps = req.headers['x-forwarded-for']!;
+    const forwardedIps = req.headers['x-forwarded-for']!as string;
     console.log(forwardedIps)
     console.log(typeof forwardedIps)
-    const ipAddress =  req.ip!
-
-    const response = await client.country(ipAddress);
+    const ipAddresses = forwardedIps.split(',');
+    const firstIpAddress = ipAddresses[0].trim();
+    const response = await client.country(firstIpAddress);
     if (!response) {
       throw new HttpError(500, 'Failed to retrieve location data');
     }
