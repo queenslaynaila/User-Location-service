@@ -11,22 +11,16 @@ app.use(express.json());
 app.use(morgan('dev'));
 app.use(cors());
 
-const dbFilePath = './GeoLite2-City.mmdb';
+const dbFilePath = './GeoLite2-Country.mmdb';
 const readerPromise = Reader.open(dbFilePath);
 
 app.get('/user-location', async (req: Request, res: Response) => {
   const ipAddress = req.ip!
   const reader = await readerPromise;
-  const response = reader.city(ipAddress);
-  console.log(response);
+  const response = reader.country(ipAddress);
   const locationData = {
     continent: response.continent?.names.en,
-    country: response.country?.names.en,
-    city: response.city?.names.en,
-    latitude: response.location?.latitude,
-    longitude: response.location?.longitude,
-    postalCode: response.postal?.code,
-    timezone: response.location?.timeZone,
+    country: response.country?.names.en
   };
   res.json(locationData);
 });
