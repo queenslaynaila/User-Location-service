@@ -26,6 +26,7 @@ app.get<string, Record<string, never>, LocationData, Record<string, never>, Reco
   '/user-location',
   async (req, res) => {
     const ipAddress = req.ip!
+    console.log(ipAddress)
     const response = await client.country(ipAddress);
     if (!response) {
       throw new HttpError(500, 'Failed to retrieve location data');
