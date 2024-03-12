@@ -17,18 +17,17 @@ const acount = process.env.ACCOUNT_SID ?? 'default_value';
 const apiKey = process.env.API_KEY ?? 'default_value';
 const client = new WebServiceClient(acount, apiKey, { host: 'geolite.info' });
 
-// interface LocationData {
-//   ip?: string ;
-//   countryCode: string  | null;
-// }
+interface LocationData {
+  ip?: string ;
+  countryCode: string  | null;
+}
 
-app.get(
+
+app.get<string, Record<string, never>, LocationData, Record<string, never>, Record<string, never>>(
   '/user-location', 
   async (req, res) => {
-    const forwardedIps = req.headers['x-forwarded-for']!as string;
-    console.log(forwardedIps)
-    console.log(typeof forwardedIps)
-    const ipAddresses = forwardedIps.split(',');
+    const ForwardedForHeader = req.headers['x-forwarded-for']! as string;
+    const ipAddresses = ForwardedForHeader.split(',');
     const firstIpAddress = ipAddresses[0].trim();
     const response = await client.country(firstIpAddress);
     if (!response) {
@@ -39,7 +38,8 @@ app.get(
       countryCode: response.country?.isoCode ?? null,
     };
     res.json(locationData);
-  });
+  }
+);
 
 
 app.use(() => {
