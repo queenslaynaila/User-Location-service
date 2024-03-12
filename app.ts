@@ -17,17 +17,18 @@ const acount = process.env.ACCOUNT_SID ?? 'default_value';
 const apiKey = process.env.API_KEY ?? 'default_value';
 const client = new WebServiceClient(acount, apiKey, { host: 'geolite.info' });
 
-interface LocationData {
-  ip?: string ;
-  countryCode: string  | null;
-}
+// interface LocationData {
+//   ip?: string ;
+//   countryCode: string  | null;
+// }
 
-app.get<string, Record<string, never>, LocationData, Record<string, never>, Record<string, never>>(
-  '/user-location',
+app.get(
+  '/user-location', 
   async (req, res) => {
-    const ipAddress = req.ip!
-    console.log(ipAddress)
-    console.log("Request Headers:", req.headers);
+    const forwardedIps = req.headers['x-forwarded-for']!;
+    console.log(forwardedIps)
+    console.log(typeof forwardedIps)
+    const ipAddress =  req.ip!
 
     const response = await client.country(ipAddress);
     if (!response) {
@@ -36,11 +37,10 @@ app.get<string, Record<string, never>, LocationData, Record<string, never>, Reco
     const locationData = {
       ip: response.traits?.ipAddress,
       countryCode: response.country?.isoCode ?? null,
-      
     };
     res.json(locationData);
-  }
-);
+  });
+
 
 app.use(() => {
   throw new HttpError(404, 'Route Not found');
