@@ -19,42 +19,21 @@ const client = new WebServiceClient(acount, apiKey, { host: 'geolite.info' });
 
 interface LocationData {
   ip?: string ;
-  continentCode: string | null;
-  continentName: string | null;
   countryCode: string  | null;
-  countryName: string  | null;
-  mobileCountryCode: string | null;
-  isInEu: boolean | null;
-  city: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  postalCode: string |null;
-  timezone: string |null;
-  populationDensity: number |null;
 }
 
 app.get<string, Record<string, never>, LocationData, Record<string, never>, Record<string, never>>(
   '/user-location',
   async (req, res) => {
     const ipAddress = req.ip!
-    const response = await client.city(ipAddress);
+    const response = await client.country(ipAddress);
     if (!response) {
       throw new HttpError(500, 'Failed to retrieve location data');
     }
     const locationData = {
       ip: response.traits?.ipAddress,
-      continentCode: response.continent?.code ?? null,
-      continentName: response.continent?.names.en ?? null,
       countryCode: response.country?.isoCode ?? null,
-      countryName: response.country?.names.en ?? null,
-      mobileCountryCode: response.traits?.mobileCountryCode ?? null,
-      isInEu: response.registeredCountry?.isInEuropeanUnion ?? null,
-      city: response.city?.names.en?? null,
-      latitude: response.location?.latitude ?? null,
-      longitude: response.location?.longitude ?? null,
-      postalCode: response.postal?.code ?? null,
-      timezone: response.location?.timeZone ?? null ,
-      populationDensity: response.location?.populationDensity ?? null ,
+      
     };
     res.json(locationData);
   }
@@ -67,7 +46,6 @@ app.use(() => {
 // Global error handler
 /* eslint-disable @typescript-eslint/no-unused-vars */
 app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
-  console.log(error);
   if (error instanceof HttpError) {
     return res.status(error.statusCode).json({ error: error.message });
   } 
