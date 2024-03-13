@@ -2,35 +2,24 @@ import express, { Request, Response } from 'express';
 import 'express-async-errors';
 import morgan from 'morgan';
 import { HttpError } from './middleware/errorMiddleware';
-import { Reader } from '@maxmind/geoip2-node';
+import rateLimit from 'express-rate-limit';
+import databaseConfig from './config';
+import getLocation from './routes/location'
 
 const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(morgan('dev'));
 
+const limiter = rateLimit({
+  windowMs: databaseConfig.rateLimit.windowMs,
+  max: databaseConfig.rateLimit.max,
+  message: databaseConfig.rateLimit.message,
+});
 
-const dbFilePath = './GeoLite2-Country.mmdb';
-const readerPromise = Reader.open(dbFilePath);
+getLocation(app);
 
-interface LocationData {
-  ip: string ;
-  countryCode: string  | null;
-}
-
-app.get<string, Record<string, never>, LocationData, Record<string, never>, Record<string, never>>(
-  '/user-location', 
-  async (req: Request, res: Response) => {
-    const ipAddress = req.ip!
-    const reader = await readerPromise;
-    const response = reader.country(ipAddress);
-    const locationData = {
-      ip: response.traits.ipAddress,
-      countryCode: response.country?.isoCode ?? null,
-    };
-    res.json(locationData);
-  });
-
+app.use(limiter);
 
 app.use(() => {
   throw new HttpError(404, 'Route Not found');
