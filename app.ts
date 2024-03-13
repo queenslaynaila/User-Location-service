@@ -27,7 +27,7 @@ app.get<string, Record<string, never>, LocationData, Record<string, never>, Reco
   '/user-location', 
   async (req, res) => {
     const ForwardedForHeader = req.headers['x-forwarded-for']! as string;
-    console.log(ForwadedForHeader)
+    console.log(ForwardedForHeader)
     const ipAddresses = ForwardedForHeader.split(',');
     const firstIpAddress = ipAddresses[0].trim();
     const response = await client.country(firstIpAddress);
