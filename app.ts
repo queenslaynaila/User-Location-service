@@ -1,7 +1,6 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response } from 'express';
 import 'express-async-errors';
 import morgan from 'morgan';
-import cors from 'cors';
 import dotenv from 'dotenv';
 import { HttpError } from './middleware/errorMiddleware';
 import { WebServiceClient } from '@maxmind/geoip2-node';
@@ -10,33 +9,28 @@ const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(morgan('dev'));
-app.use(cors());
 dotenv.config();
 
-const acount = process.env.ACCOUNT_SID ?? 'default_value';
+const account = process.env.ACCOUNT_SID ?? 'default_value';
 const apiKey = process.env.API_KEY ?? 'default_value';
-const client = new WebServiceClient(acount, apiKey, { host: 'geolite.info' });
+const geoIpClient = new WebServiceClient(account, apiKey, { host: 'geolite.info' });
 
 interface LocationData {
-  ip?: string ;
-  countryCode: string  | null;
+  ip?: string;
+  countryCode: string | null;
 }
 
-
 app.get<string, Record<string, never>, LocationData, Record<string, never>, Record<string, never>>(
-  '/user-location', 
+  '/user-location',
   async (req, res) => {
-    const ForwardedForHeader = req.headers['x-forwarded-for']! as string;
-    console.log(ForwardedForHeader)
-     console.log(req.connection.remoteAddress) // Corrected typo here
-    console.log(req.socket.remoteAddress) 
-    const ipAddresses = ForwardedForHeader.split(',');
-    const firstIpAddress = ipAddresses[0].trim();
-    const response = await client.country(firstIpAddress);
+    const forwardedForHeader = req.headers['x-forwarded-for'] as string;
+    const ipAddresses = forwardedForHeader.split(',');
+    const realIpAddres = ipAddresses[0].trim();
+    const response = await geoIpClient.country(realIpAddres);
     if (!response) {
       throw new HttpError(500, 'Failed to retrieve location data');
     }
-    const locationData = {
+    const locationData: LocationData = {
       ip: response.traits?.ipAddress,
       countryCode: response.country?.isoCode ?? null,
     };
@@ -44,20 +38,16 @@ app.get<string, Record<string, never>, LocationData, Record<string, never>, Reco
   }
 );
 
-
 app.use(() => {
   throw new HttpError(404, 'Route Not found');
 });
 
-// Global error handler
-/* eslint-disable @typescript-eslint/no-unused-vars */
-app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
-  console.log(error)
+
+app.use((error: Error, req: Request, res: Response) => {
   if (error instanceof HttpError) {
     return res.status(error.statusCode).json({ error: error.message });
-  } 
+  }
   return res.status(500).json({ error: 'Internal Server Error' });
-  
 });
 
 export default app;
