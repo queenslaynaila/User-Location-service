@@ -14,12 +14,19 @@ app.use(morgan('dev'));
 const limiter = rateLimit({
   windowMs: databaseConfig.rateLimit.windowMs,
   max: databaseConfig.rateLimit.max,
-  message: databaseConfig.rateLimit.message,
-});
-
+  
+})
+app.use(limiter);
 getLocation(app);
 
-app.use(limiter);
+
+// app.use((req:Request, res:Response, next) => {
+//   req.rateLimit = { remaining: req.rateLimit.remaining - 1 };
+//   if (req.rateLimit.remaining === 0) {
+//     throw new HttpError(429, 'Rate limit exceeded');
+//   }
+//   next();
+// });
 
 app.use(() => {
   throw new HttpError(404, 'Route Not found');
