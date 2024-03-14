@@ -12,6 +12,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(morgan('dev'));
 dotenv.config();
+app.set('trust proxy', true);
 
 const account = process.env.ACCOUNT_SID ?? 'default_value';
 const apiKey = process.env.API_KEY ?? 'default_value';
@@ -33,6 +34,7 @@ app.use('/user-location', rateLimiter);
 app.get<string, Record<string, never>, LocationData, Record<string, never>, Record<string, never>>(
   '/user-location',
   async (req, res) => {
+    console.log(req.ip ?? 'unknown');
     const forwardedForHeader = req.headers['x-forwarded-for'] as string;
     const ipAddresses = forwardedForHeader.split(',');
     const clientIpAddress = ipAddresses[0].trim();
