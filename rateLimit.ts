@@ -4,7 +4,7 @@ const databaseConfig = {
     windowMs: 60 * 60 * 1000, 
     max: 5,
     standardHeaders: true,
-    message: 'Too many requests from this IP, please try again later',
+    errorMessage: 'Too many requests from this IP, please try again later',
   },
 };
     

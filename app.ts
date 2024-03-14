@@ -25,6 +25,7 @@ interface LocationData {
 const rateLimiter = rateLimit({
   windowMs: databaseConfig.rateLimit.windowMs,
   max: databaseConfig.rateLimit.max,
+  message: databaseConfig.rateLimit.errorMessage,
 });
 
 app.use('/user-location', rateLimiter);
