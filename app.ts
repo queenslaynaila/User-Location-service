@@ -2,6 +2,8 @@ import express, { Request, Response } from 'express';
 import 'express-async-errors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import rateLimit from 'express-rate-limit';
+import databaseConfig from './rateLimit';
 import { HttpError } from './middleware/errorMiddleware';
 import { WebServiceClient } from '@maxmind/geoip2-node';
 
@@ -19,6 +21,12 @@ interface LocationData {
   ip?: string;
   countryCode: string | null;
 }
+const limiter = rateLimit({
+  windowMs: databaseConfig.rateLimit.windowMs,
+  max: databaseConfig.rateLimit.max,
+  
+})
+
 
 app.get<string, Record<string, never>, LocationData, Record<string, never>, Record<string, never>>(
   '/user-location',
@@ -37,6 +45,8 @@ app.get<string, Record<string, never>, LocationData, Record<string, never>, Reco
     res.json(locationData);
   }
 );
+
+app.use('/user-location',limiter);
 
 app.use(() => {
   throw new HttpError(404, 'Route Not found');
